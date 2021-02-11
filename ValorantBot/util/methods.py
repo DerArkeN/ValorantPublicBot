@@ -48,35 +48,35 @@ async def set_rank(ctx, dcUser, rank):
     for i in old_roles_NAME_filtered:
         await dcUser.add_roles(get(dcUser.guild.roles, name=i))
 
-# async def check_profile(bot, vclient):
-#   guild_members = bot.guilds[0].members
-#   for member in guild_members:
-#     if await get_rank(member) != None:
-#       if member.nick != None:
-#         if not member.bot:
-#           nickname = member.nick
-#           x = nickname.split('#')
-#           print(x)
-#           dcName = x[0]
-#           dcTag = x[1]
 
+async def check_profile(member, vclient):
+    if await get_rank(member) is not None:
+        if member.nick is not None:
+            if not member.bot:
+                if sql.user_exists(member.id):
+                    valPUUID = sql.get_puuid(member.id)
 
-#           if sql.user_exists(member.id):
-#             valPUUID = sql.get_puuid(member.id)
+                    valUser = vclient.get_user(valPUUID, "puuid")
+                    valTag = valUser.__getattribute__("tagLine")
+                    valName = valUser.__getattribute__("gameName")
 
-#             valUser = vclient.get_user(valPUUID, "puuid")
-#             valTag = valUser.__getattribute__("tagLine")
-#             valName = valUser.__getattribute__("gameName")
+                    nick = member.nick
 
-#             if dcTag != valTag:
-#               sql.update_tag(member.id, valTag)
-#               try:
-#                 await member.edit(nick=valName+"#"+valTag)
-#               except:
-#                 print("error updating user tag")
-#             elif dcName != valName:
-#               sql.update_name(member.id, valName) 
-#               try:
-#                 await member.edit(nick=valName+"#"+valTag)
-#               except:
-#                 print("error updating user name")
+                    x = nick.split('#')
+                    dcName = x[0]
+                    dcTag = x[1]
+
+                    if dcTag != valTag:
+                        sql.update_tag(member.id, valTag)
+                        try:
+                            await member.edit(nick=valName + "#" + valTag)
+                            sql.update_tag(member.id, valTag)
+                        except:
+                            print("error updating user tag. it would've been set to " + valName+"#"+valTag)
+                    elif dcName != valName:
+                        sql.update_name(member.id, valName)
+                        try:
+                            await member.edit(nick=valName + "#" + valTag)
+                            sql.update_name(member.id, valName)
+                        except:
+                            print("error updating username. it would've been set to " + valName+"#"+valTag)

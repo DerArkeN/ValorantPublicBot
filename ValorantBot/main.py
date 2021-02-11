@@ -21,7 +21,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 @bot.event
 async def on_ready():
-    print("Valorant Bot logged in")
+    print("'Valorant Public Bot' logged in")
     print(sql.mydb)
     sql.create_table()
 
@@ -30,10 +30,9 @@ async def on_ready():
 async def on_member_join(member):
     channel_support = bot.get_channel(806112383693094942)
     channel_rules = bot.get_channel(806088311848435732)
-    channel_commands = bot.get_channel(806084486869417984)
     await channel_support.send(content=
     'Welcome to the Public Valorant Server, ' + member.mention + '\n\nStart of by reading the rules in ' + channel_rules.mention +
-    '\nWhen you are done give yourself your Valorant Rank by going to ' + channel_commands.mention + ' and do !register "Name+Tag" "Rank". As an example !register "arkeN#0711" "Platinum 1"' + '\n\nNow you have full acces on the Discord Server, if any questions come up feel free to tag an Moderator or an Administrator for important questions.\n'
+    ' and have a look into the server tutorial.' + '\n\nNow you have full access on the Discord Server, if any questions come up feel free to tag an Moderator or an Administrator for important questions.\n'
     , delete_after=900)
 
 
@@ -42,13 +41,6 @@ async def on_member_remove(member):
     if member.nick is not None:
         if not member.bot:
             sql.delete_user(member.id)
-
-
-@bot.event
-async def on_member_ban(guild, user):
-    if user.nick is not None:
-        if not user.bot:
-            sql.delete_user(user.id)
 
 
 def is_bot(message):
@@ -78,54 +70,59 @@ async def on_reaction_remove(reaction, user):
 
 @bot.command(name="register", pass_context=True)
 async def register_command(ctx, name=None, rank=None):
-    if ctx.channel == bot.get_channel(806084486869417984):
-        if name is not None:
-            if rank is not None:
-                await register.register(ctx, name, rank, vclient, bot)
-            else:
-                await ctx.send("You have to enter a rank.")
-        else:
-            await ctx.send("You have to enter a name.")
-    else:
-        await bot.get_channel(806112383693094942).send(content=ctx.author.mention + "you can't use this command here, got to " + bot.get_channel(806084486869417984).mention, delete_after=30)
-        await ctx.channel.purge(limit=1)
+    await register.register(ctx, name, rank, vclient, bot)
 
 
 @bot.command(name="rank", pass_context=True)
 async def rank_command(ctx, role=None):
-    if ctx.channel == bot.get_channel(806084486869417984):
-      if role is not None:
-          await rank.rank(ctx, role, bot)
-      else:
-        await ctx.send("You have to enter a rank.")
-    else:
-        await bot.get_channel(806112383693094942).send(content=ctx.author.mention + " you can't use this command here, got to " + bot.get_channel(806084486869417984).mention, delete_after=30)
-        await ctx.channel.purge(limit=1)
+    await rank.rank(ctx, role, bot)
 
 
 @bot.command(name="lft", pass_context=True)
-async def lft_command(ctx):
-    if ctx.channel == bot.get_channel(806109172336689162):
+async def lft_command(ctx, amount=None):
+    if amount is None:
         await lft.lft(ctx, bot)
     else:
-        await bot.get_channel(806112383693094942).send(ctx.author.mention + " you can't use this command here, got to " + bot.get_channel(806109172336689162).mention, delete_after=30)
-        await ctx.channel.purge(limit=1)
+        await lft.lft_casual(ctx, bot, amount)
+
+
+@bot.command(name="update", pass_context=True)
+async def update_command(ctx):
+    if ctx.channel == bot.get_channel(806084486869417984):
+        await methods.check_profile(ctx.author, vclient)
+        await ctx.send("Your profile has been updated.")
 
 
 @bot.event
 async def on_voice_state_update(member, before, after):
-    join_to_create = bot.get_channel(806102585995296809)
+    join_to_create = bot.get_channel(809430391177084969)
     join_to_create_category = join_to_create.category
 
-    if after.channel == join_to_create:
-        new_voice = await member.guild.create_voice_channel(name=member.nick + "'s Channel", category=join_to_create_category)
-        await member.move_to(new_voice)
+    if not member.bot:
+        if after.channel == join_to_create:
+            new_voice = await member.guild.create_voice_channel(name=member.nick + "'s Channel", category=join_to_create_category)
+            await member.move_to(new_voice)
+
+    if before.channel is not None:
+        # delete temp channels
+        if before.channel.category == join_to_create_category:
+            if before.channel != join_to_create:
+                if len(before.channel.members) == 0:
+                    await before.channel.delete()
+            # delete channel remove
+            await lft.lft_leave_channel(before)
 
 
 @bot.event
 async def on_disconnect():
     sql.mydb.close()
     print("Valorant Bot logged out")
+
+
+@bot.event
+async def on_member_update(before, after):
+    if before.status != after.status:
+        await methods.check_profile(after, vclient)
 
 
 bot.run(os.getenv("TOKEN"))
