@@ -51,10 +51,10 @@ async def set_rank(ctx, dcUser, rank):
 
 
 async def check_profile(member, vclient):
-    if sql.user_exists(member.id):
-        if await get_rank(member) is not False:
-            if member.nick is not None:
-                if not member.bot:
+    if await get_rank(member) is not False:
+        if member.nick is not None:
+            if not member.bot:
+                if sql.user_exists(member.id):
                     valPUUID = sql.get_puuid(member.id)
 
                     valUser = vclient.get_user(valPUUID, "puuid")

@@ -15,6 +15,7 @@ async def lft(ctx, bot):
                     len(dcUser.voice.channel.members)) + "/5 player in the channel.",
                 delete_after=900)
             await msg.add_reaction('✅')
+            await dcUser.voice.channel.set_permissions(*dcUser.guild.members, connect=False)
             reaction_map[msg] = dcUser
     else:
         await bot.get_channel(806112383693094942).send(
@@ -32,25 +33,29 @@ async def lft_event_add(reaction, user, bot):
             lft_author = reaction_map[reaction.message]
             channel_to_move = lft_author.voice.channel
             channel_members = channel_to_move.members
-            for member in channel_members:
-                member_role = await methods.get_rank(member)
-                move = 0
-                if not abs(member_role.position - member_position) > 3:
-                    move += 1
+            if user is not lft_author:
+                for member in channel_members:
+                    member_role = await methods.get_rank(member)
+                    move = 0
+                    if not abs(member_role.position - member_position) > 3:
+                        move += 1
+                    else:
+                        move -= 1
+                if move >= len(channel_members):
+                    await user.move_to(channel_to_move)
+                    leave_map[user] = reaction
+                    lft_author_role = await methods.get_rank(lft_author)
+                    content = lft_author.mention + " is looking for teammates for ranked, he is " + lft_author_role.name + ". Join a channel and react to the message to join the channel. There are currently " + str(
+                        len(lft_author.voice.channel.members)) + "/5 players in the channel."
+                    await reaction.message.edit(content=content)
+                    if len(lft_author.voice.channel.members) >= 5:
+                        reaction.message.delete()
                 else:
-                    move -= 1
-            if move >= len(channel_members):
-                await user.move_to(channel_to_move)
-                leave_map[user] = reaction
-                lft_author_role = await methods.get_rank(lft_author)
-                content = lft_author.mention + " is looking for teammates for ranked, he is " + lft_author_role.name + ". Join a channel and react to the message to join the channel. There are currently " + str(
-                    len(lft_author.voice.channel.members)) + "/5 players in the channel."
-                await reaction.message.edit(content=content)
-
+                    await bot.get_channel(806112383693094942).send(
+                        content=user.mention + ", there are people with too high ranks for you in this channel.",
+                        delete_after=30)
+                    await reaction.remove(user)
             else:
-                await bot.get_channel(806112383693094942).send(
-                    content=user.mention + ", there are people with too high ranks for you in this channel.",
-                    delete_after=30)
                 await reaction.remove(user)
         else:
             await bot.get_channel(806112383693094942).send(
@@ -70,14 +75,13 @@ async def lft_event_remove(reaction, user, bot):
 
 
 async def lft_leave_channel(member):
-    if member in leave_map:
-        print(member.nick + " a")
-        member_reaction = leave_map[member]
-        lft_author = reaction_map[member_reaction.message]
-        if member != lft_author:
-            print(member.nick + " b")
-            user_role = await methods.get_rank(lft_author)
-            content = lft_author.mention + " is looking for teammates for ranked, he is " + user_role.name + ". Join a channel and react to the message to join the channel. There are currently " + str(
-                len(lft_author.voice.channel.members)) + "/5 players in the channel."
-            await member_reaction.message.edit(content=content)
-            await member_reaction.remove(member)
+    if member.nick is not None:
+        if member in leave_map:
+            member_reaction = leave_map[member]
+            lft_author = reaction_map[member_reaction.message]
+            if member != lft_author:
+                user_role = await methods.get_rank(lft_author)
+                content = lft_author.mention + " is looking for teammates for ranked, he is " + user_role.name + ". Join a channel and react to the message to join the channel. There are currently " + str(
+                    len(lft_author.voice.channel.members)) + "/5 players in the channel."
+                await member_reaction.message.edit(content=content)
+                await member_reaction.remove(member)
