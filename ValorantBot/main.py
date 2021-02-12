@@ -14,6 +14,7 @@ intents = discord.Intents.default()
 intents.members = True
 intents.bans = True
 intents.voice_states = True
+intents.presences = True
 
 vclient = valorant.Client(os.getenv("KEY"))
 bot = commands.Bot(command_prefix="!", intents=intents)
@@ -100,8 +101,9 @@ async def on_voice_state_update(member, before, after):
 
     if not member.bot:
         if after.channel == join_to_create:
-            new_voice = await member.guild.create_voice_channel(name=member.nick + "'s Channel", category=join_to_create_category)
-            await member.move_to(new_voice)
+            if member.nick is not None:
+                new_voice = await member.guild.create_voice_channel(name=member.nick + "'s Channel", category=join_to_create_category)
+                await member.move_to(new_voice)
 
     if before.channel is not None:
         # delete temp channels
@@ -109,7 +111,7 @@ async def on_voice_state_update(member, before, after):
             if before.channel != join_to_create:
                 if len(before.channel.members) == 0:
                     await before.channel.delete()
-            # delete channel remove
+            # delete channel reaction
             await lft.lft_leave_channel(before)
 
 
