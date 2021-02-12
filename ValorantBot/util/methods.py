@@ -25,9 +25,10 @@ async def get_rank(dcUser):
     roles_NAME_filtered = roles_NAME_filtered.tolist()
     roles_NAME_filtered.remove("@everyone")
 
-    role = get(dcUser.guild.roles, name=roles_NAME_filtered[0])
-
-    return role
+    if roles_NAME_filtered:
+        role = get(dcUser.guild.roles, name=roles_NAME_filtered[0])
+        return role
+    return False
 
 
 async def set_rank(ctx, dcUser, rank):
@@ -50,7 +51,7 @@ async def set_rank(ctx, dcUser, rank):
 
 
 async def check_profile(member, vclient):
-    if await get_rank(member) is not None:
+    if await get_rank(member) is not False:
         if member.nick is not None:
             if not member.bot:
                 if sql.user_exists(member.id):

@@ -112,7 +112,7 @@ async def on_voice_state_update(member, before, after):
                 if len(before.channel.members) == 0:
                     await before.channel.delete()
             # delete channel reaction
-            await lft.lft_leave_channel(before)
+            await lft.lft_leave_channel(member)
 
 
 @bot.event
