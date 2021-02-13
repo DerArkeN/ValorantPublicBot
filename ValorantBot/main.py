@@ -111,8 +111,24 @@ async def on_voice_state_update(member, before, after):
             if before.channel != join_to_create:
                 if len(before.channel.members) == 0:
                     await before.channel.delete()
+                    if member in lft.message_map:
+                        msg = lft.message_map[member]
+                        await msg.delete()
+                        del lft.message_map[member]
+                        del lft.member_map[msg]
                 # delete channel reaction
                 await lft.lft_leave_channel(member)
+
+    if after.channel is not None:
+        if after.channel.category == join_to_create_category:
+            if after.channel != join_to_create:
+                if len(after.channel.members) == 5:
+                    for member in after.channel.members:
+                        if member in lft.message_map:
+                            msg = lft.message_map[member]
+                            await msg.delete
+                            del lft.message_map[member]
+                            del lft.member_map[msg]
 
 
 @bot.event

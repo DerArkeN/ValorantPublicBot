@@ -31,7 +31,15 @@ async def get_rank(dcUser):
     return False
 
 
-async def set_rank(ctx, dcUser, rank):
+def get_valid_roles(guild):
+    roles = []
+    for role_name in valid_roles:
+        role = get(guild.roles, name=role_name)
+        roles.append(role)
+    return roles
+
+
+async def set_rank(dcUser, rank):
     old_roles_ROLES = dcUser.roles
     old_roles_NAME = []
     for old_roles_ROLE in old_roles_ROLES:

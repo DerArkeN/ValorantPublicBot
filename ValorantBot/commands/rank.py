@@ -10,7 +10,7 @@ async def rank(ctx, rank, bot):
                 role = get(dcUser.guild.roles, name=rank)
 
                 if sql.user_exists(dcUser.id):
-                    await methods.set_rank(ctx, dcUser, role)
+                    await methods.set_rank(dcUser, role)
                     await ctx.send("Your rank has been updated.")
                 else:
                     await ctx.send("You have to register first.")

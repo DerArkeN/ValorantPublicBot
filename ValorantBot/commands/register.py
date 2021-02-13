@@ -26,7 +26,7 @@ async def register(ctx, name, rank, vclient, bot):
                             await dcUser.edit(nick=valName + "#" + valTag)
                         except:
                             await ctx.send("There was an error setting your username.")
-                        await methods.set_rank(ctx, dcUser, role)
+                        await methods.set_rank(dcUser, role)
                         await ctx.send("Your nickname was set to your Valorant name and your rank has been updated.")
                     elif reg == 1:
                         await ctx.send('You are already registered with this Valorant UUID. Use !rank "rank". (Please contact a moderator if you are the account owner and someone else registered with your account).')
