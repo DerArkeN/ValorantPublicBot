@@ -80,11 +80,8 @@ async def rank_command(ctx, role=None):
 
 
 @bot.command(name="lft", pass_context=True)
-async def lft_command(ctx, amount=None):
-    if amount is None:
-        await lft.lft(ctx, bot)
-    else:
-        await lft.lft_casual(ctx, bot, amount)
+async def lft_command(ctx):
+    await lft.lft(ctx, bot)
 
 
 @bot.command(name="update", pass_context=True)
@@ -102,7 +99,7 @@ async def on_voice_state_update(member, before, after):
     if not member.bot:
         if after.channel == join_to_create:
             if member.nick is not None:
-                new_voice = await member.guild.create_voice_channel(name=member.nick + "'s Channel", category=join_to_create_category)
+                new_voice = await member.guild.create_voice_channel(name=member.nick + "'s channel", category=join_to_create_category)
                 await member.move_to(new_voice)
 
     if before.channel is not None:
@@ -111,24 +108,14 @@ async def on_voice_state_update(member, before, after):
             if before.channel != join_to_create:
                 if len(before.channel.members) == 0:
                     await before.channel.delete()
-                    if member in lft.message_map:
-                        msg = lft.message_map[member]
-                        await msg.delete()
-                        del lft.message_map[member]
-                        del lft.member_map[msg]
                 # delete channel reaction
-                await lft.lft_leave_channel(member)
+                await lft.lft_leave_channel(member, before)
 
     if after.channel is not None:
         if after.channel.category == join_to_create_category:
             if after.channel != join_to_create:
                 if len(after.channel.members) == 5:
-                    for member in after.channel.members:
-                        if member in lft.message_map:
-                            msg = lft.message_map[member]
-                            await msg.delete
-                            del lft.message_map[member]
-                            del lft.member_map[msg]
+                    await methods.set_closed(after)
 
 
 @bot.event
