@@ -19,17 +19,26 @@ lft_data = dict()
 
 
 def get_executor(msg_or_channel):
-    value = lft_data[msg_or_channel.id]
+    try:
+        value = lft_data[msg_or_channel.id]
+    except KeyError:
+        print("Key doesn't exist: ", msg_or_channel.id)
     return value[0]
 
 
 def get_msg(executor_or_channel):
-    value = lft_data[executor_or_channel.id]
+    try:
+        value = lft_data[executor_or_channel.id]
+    except KeyError:
+        print("Key doesn't exist: ", executor_or_channel.id)
     return value[1]
 
 
 def get_channel(executor_or_msg):
-    value = lft_data[executor_or_msg.id]
+    try:
+        value = lft_data[executor_or_msg.id]
+    except KeyError:
+        print("Key doesn't exist: ", executor_or_msg.id)
     return value[2]
 
 
@@ -38,9 +47,11 @@ async def set_lft(executor, bot):
     lft_channel = bot.get_channel(806109172336689162)
     user_role = await get_rank(executor)
 
+    print("b")
+
     await channel.set_permissions(get(executor.guild.roles, id=806081402407092295), connect=False)
+    print("c")
     await channel.edit(name="Looking for mates", user_limit=5)
-    print(channel.name)
     msg = await lft_channel.send(
         content=executor.mention + " is looking for teammates for ranked, he is " + user_role.name + ". Join a channel and react to the message to join the channel. There are currently " + str(
             len(executor.voice.channel.members)) + "/5 player in the channel.",
@@ -58,9 +69,7 @@ async def set_closed(channel):
     await channel.set_permissions(get(executor.guild.roles, id=806081402407092295), connect=False)
     await msg.delete()
     await channel.edit(name="Playing", user_limit=5)
-    del lft_data[msg.id]
-    del lft_data[channel.id]
-    del lft_data[executor.id]
+    [lft_data.pop(x, None) for x in [msg.id, channel.id, executor.id]]
 
 
 async def set_casual(channel):
@@ -70,13 +79,11 @@ async def set_casual(channel):
     await msg.delete()
     if len(channel.members) != 0:
         await channel.set_permissions(get(executor.guild.roles, id=806081402407092295), connect=True)
-        await channel.edit(name=channel.members[0].nick + "'s channel", limit=0)
-    del lft_data[msg.id]
-    del lft_data[channel.id]
-    del lft_data[executor.id]
+        await channel.edit(name=channel.members[0].nick + "'s channel", limit=None)
+    [lft_data.pop(x, None) for x in [msg.id, channel.id, executor.id]]
 
 
-async def get_rank(dcUser):
+def get_rank(dcUser):
     roles_ROLES = dcUser.roles
     roles_NAME = [roles_ROLE.name for roles_ROLE in roles_ROLES]
     roles_NAME_filtered = numpy.setdiff1d(roles_NAME, unvalid_roles)
@@ -114,7 +121,7 @@ async def set_rank(dcUser, rank):
 
 
 async def check_profile(member, vclient):
-    if await get_rank(member) is not False:
+    if get_rank(member) is not False:
         if member.nick is not None:
             if not member.bot:
                 if sql.user_exists(member.id):
@@ -135,12 +142,12 @@ async def check_profile(member, vclient):
                         try:
                             await member.edit(nick=valName + "#" + valTag)
                             sql.update_tag(member.id, valTag)
-                        except:
+                        except PermissionError:
                             print("error updating user tag. it would've been set to " + valName + "#" + valTag)
                     elif dcName != valName:
                         sql.update_name(member.id, valName)
                         try:
                             await member.edit(nick=valName + "#" + valTag)
                             sql.update_name(member.id, valName)
-                        except:
+                        except PermissionError:
                             print("error updating username. it would've been set to " + valName + "#" + valTag)

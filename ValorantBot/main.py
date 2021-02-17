@@ -52,10 +52,8 @@ def is_bot(message):
 async def on_message(message):
     await bot.process_commands(message)
     if message.channel == bot.get_channel(806109172336689162):
-        try:
-            await message.channel.purge(check=is_bot)
-        except:
-            return
+        if message.author != bot.get_user(806461492450426900):
+            await message.delete()
 
 
 @bot.event
@@ -91,6 +89,15 @@ async def update_command(ctx):
         await ctx.send("Your profile has been updated.")
 
 
+@bot.command(name="close", pass_context=True)
+async def close_command(ctx):
+    if ctx.author.voice is not None:
+        if ctx.author.voice.channel.id in methods.lft_data:
+            await methods.set_closed(ctx.author.voice.channel)
+        else:
+            await bot.get_channel(806112383693094942).send(content=ctx.author.mention + ", you need to use !lft before using !close.", delete_after=30)
+
+
 @bot.event
 async def on_voice_state_update(member, before, after):
     join_to_create = bot.get_channel(809430391177084969)
@@ -114,20 +121,15 @@ async def on_voice_state_update(member, before, after):
     if after.channel is not None:
         if after.channel.category == join_to_create_category:
             if after.channel != join_to_create:
-                if len(after.channel.members) == 5:
-                    await methods.set_closed(after)
+                if member in lft.old_channel_map:
+                    if len(after.channel.members) >= 2:
+                        await methods.set_closed(after)
 
 
 @bot.event
 async def on_disconnect():
     sql.mydb.close()
     print("Valorant Bot logged out")
-
-
-@bot.event
-async def on_member_update(before, after):
-    if before.status != after.status:
-        await methods.check_profile(after, vclient)
 
 
 bot.run(os.getenv("TOKEN"))
