@@ -77,9 +77,16 @@ async def rank_command(ctx, role=None):
     await rank.rank(ctx, role, bot)
 
 
+@discord.ext.commands.cooldown(rate=2, per=600)
 @bot.command(name="lft", pass_context=True)
 async def lft_command(ctx):
     await lft.lft(ctx, bot)
+
+@lft_command.error()
+async def lft_error(ctx, error):
+    if isinstance(error, commands.CommandOnCooldown):
+        await bot.get_channel(806112383693094942).send(
+            content=ctx.author.mention + ", this channel is on cooldown, create a new one!", delete_after=30)
 
 
 @bot.command(name="update", pass_context=True)
