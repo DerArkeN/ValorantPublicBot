@@ -1,4 +1,4 @@
-from ValorantBot.util import methods, sql
+from util import methods, sql
 
 old_channel_map = {}
 reaction_map = {}

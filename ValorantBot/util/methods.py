@@ -1,6 +1,6 @@
 import numpy
 from discord.utils import get
-from ValorantBot.util import sql
+from util import sql
 
 valid_roles = ["Iron 1", "Iron 2", "Iron 3",
                "Bronze 1", "Bronze 2", "Bronze 3",

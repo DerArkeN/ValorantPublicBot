@@ -5,8 +5,8 @@ import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 
-from ValorantBot.commands import lft, register, rank
-from ValorantBot.util import sql, methods
+from commands import lft, register, rank
+from util import sql, methods
 
 load_dotenv()
 

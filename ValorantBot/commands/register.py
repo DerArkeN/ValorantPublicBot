@@ -1,5 +1,5 @@
 from discord.utils import get
-from ValorantBot.util import methods, sql
+from util import methods, sql
 
 
 async def register(ctx, name, rank, vclient, bot):
