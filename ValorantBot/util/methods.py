@@ -15,72 +15,55 @@ valid_roles = ["Iron 1", "Iron 2", "Iron 3",
 unvalid_roles = ["Administrator",
                  "Moderator"]
 
-lft_data = dict()
+async def get_executor(channel_or_message, bot):
+    id = sql.get_executor(channel_or_message.id)
+    guild = bot.get_guild(806081402407092295)
+    return await guild.fetch_member(id)
 
 
-def get_executor(msg_or_channel):
-    try:
-        value = lft_data[msg_or_channel.id]
-    except KeyError:
-        print("Key doesn't exist: ", msg_or_channel.id)
-    return value[0]
+async def get_msg(executor_or_channel, bot):
+    id = sql.get_message(executor_or_channel.id)
+    channel = bot.get_channel(806109172336689162)
+    return await channel.fetch_message(id)
 
 
-def get_msg(executor_or_channel):
-    try:
-        value = lft_data[executor_or_channel.id]
-    except KeyError:
-        print("Key doesn't exist: ", executor_or_channel.id)
-    return value[1]
-
-
-def get_channel(executor_or_msg):
-    try:
-        value = lft_data[executor_or_msg.id]
-    except KeyError:
-        print("Key doesn't exist: ", executor_or_msg.id)
-    return value[2]
+async def get_channel(executor_or_message, bot):
+    id = sql.get_channel(executor_or_message)
+    return await bot.get_channel(id)
 
 
 async def set_lft(executor, bot):
-    channel = executor.voice.channel
-    lft_channel = bot.get_channel(806109172336689162)
-    user_role = await get_rank(executor)
+    if not sql.executor_exists(executor):
+        channel = executor.voice.channel
+        lft_channel = bot.get_channel(806109172336689162)
+        user_role = get_rank(executor)
 
-    print("b")
-
-    await channel.set_permissions(get(executor.guild.roles, id=806081402407092295), connect=False)
-    print("c")
-    await channel.edit(name="Looking for mates", user_limit=5)
-    msg = await lft_channel.send(
-        content=executor.mention + " is looking for teammates for ranked, he is " + user_role.name + ". Join a channel and react to the message to join the channel. There are currently " + str(
-            len(executor.voice.channel.members)) + "/5 player in the channel.",
-        delete_after=900)
-    await msg.add_reaction('✅')
-    lft_data[executor.id] = ["placeholder", msg, channel]
-    lft_data[msg.id] = [executor, "placeholder", channel]
-    lft_data[channel.id] = [executor, msg, "placeholder"]
+        await channel.set_permissions(get(executor.guild.roles, id=806081402407092295), connect=False)
+        msg = await lft_channel.send(
+            content=executor.mention + " is looking for teammates for ranked, he is " + user_role.name + ". Join a channel and react to the message to join the channel. There are currently " + str(
+                len(executor.voice.channel.members)) + "/5 player in the channel.",
+            delete_after=900)
+        await msg.add_reaction('✅')
+        sql.insert_lftdata(executor.id, msg.id, channel.id)
 
 
-async def set_closed(channel):
-    executor = get_executor(channel)
-    msg = get_msg(channel)
+async def set_closed(channel, bot):
+    executor = await get_executor(channel, bot)
+    msg = await get_msg(channel, bot)
 
     await channel.set_permissions(get(executor.guild.roles, id=806081402407092295), connect=False)
     await msg.delete()
-    await channel.edit(name="Playing", user_limit=5)
-    [lft_data.pop(x, None) for x in [msg.id, channel.id, executor.id]]
+    sql.delete_lftdata(channel.id)
 
 
-async def set_casual(channel):
-    msg = get_msg(channel)
-    executor = get_executor(channel)
+async def set_casual(channel, bot):
+    msg = await get_msg(channel, bot)
+    executor = await get_executor(channel, bot)
 
     await msg.delete()
     if len(channel.members) != 0:
         await channel.set_permissions(get(executor.guild.roles, id=806081402407092295), connect=True)
-        await channel.edit(name=channel.members[0].nick + "'s channel", limit=None)
-    [lft_data.pop(x, None) for x in [msg.id, channel.id, executor.id]]
+    sql.delete_lftdata(channel.id)
 
 
 def get_rank(dcUser):

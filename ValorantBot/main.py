@@ -77,16 +77,9 @@ async def rank_command(ctx, role=None):
     await rank.rank(ctx, role, bot)
 
 
-@discord.ext.commands.cooldown(rate=2, per=600)
 @bot.command(name="lft", pass_context=True)
 async def lft_command(ctx):
     await lft.lft(ctx, bot)
-
-@lft_command.error()
-async def lft_error(ctx, error):
-    if isinstance(error, commands.CommandOnCooldown):
-        await bot.get_channel(806112383693094942).send(
-            content=ctx.author.mention + ", this channel is on cooldown, create a new one!", delete_after=30)
 
 
 @bot.command(name="update", pass_context=True)
@@ -99,8 +92,8 @@ async def update_command(ctx):
 @bot.command(name="close", pass_context=True)
 async def close_command(ctx):
     if ctx.author.voice is not None:
-        if ctx.author.voice.channel.id in methods.lft_data:
-            await methods.set_closed(ctx.author.voice.channel)
+        if sql.channel_exists(ctx.author.voice.channel):
+            await methods.set_closed(ctx.author.voice.channel, bot)
         else:
             await bot.get_channel(806112383693094942).send(content=ctx.author.mention + ", you need to use !lft before using !close.", delete_after=30)
 
@@ -110,27 +103,28 @@ async def on_voice_state_update(member, before, after):
     join_to_create = bot.get_channel(809430391177084969)
     join_to_create_category = join_to_create.category
 
-    if not member.bot:
-        if after.channel == join_to_create:
-            if member.nick is not None:
-                new_voice = await member.guild.create_voice_channel(name=member.nick + "'s channel", category=join_to_create_category)
-                await member.move_to(new_voice)
+    if before.channel != after.channel:
+        if not member.bot:
+            if after.channel == join_to_create:
+                if member.nick is not None:
+                    new_voice = await member.guild.create_voice_channel(name=member.nick + "'s channel", category=join_to_create_category)
+                    await member.move_to(new_voice)
 
-    if before.channel is not None:
-        # delete temp channels
-        if before.channel.category == join_to_create_category:
-            if before.channel != join_to_create:
-                if len(before.channel.members) == 0:
-                    await before.channel.delete()
-                # delete channel reaction
-                await lft.lft_leave_channel(member, before)
+        if before.channel is not None:
+            # delete temp channels
+            if before.channel.category == join_to_create_category:
+                if before.channel != join_to_create:
+                    if len(before.channel.members) == 0:
+                        await before.channel.delete()
+                    # delete channel reaction
+                    await lft.lft_leave_channel(member, before, bot)
 
-    if after.channel is not None:
-        if after.channel.category == join_to_create_category:
-            if after.channel != join_to_create:
-                if member in lft.old_channel_map:
-                    if len(after.channel.members) >= 2:
-                        await methods.set_closed(after)
+        if after.channel is not None:
+            if after.channel.category == join_to_create_category:
+                if after.channel != join_to_create:
+                    if len(after.channel.members) >= 5:
+                        if sql.channel_exists(after.channel):
+                            await methods.set_closed(after.channel, bot)
 
 
 @bot.event
